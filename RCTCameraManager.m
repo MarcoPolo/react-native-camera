@@ -177,6 +177,39 @@ RCT_EXPORT_METHOD(takePicture:(RCTResponseSenderBlock)callback) {
     }];
 }
 
+- (NSString *) applicationDocumentsDirectory
+{
+  NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
+  NSString *basePath = ([paths count] > 0) ? [paths objectAtIndex:0] : nil;
+  return basePath;
+}
+
+RCT_EXPORT_METHOD(takePictureRef:(RCTResponseSenderBlock)callback) {
+  [[self.stillImageOutput connectionWithMediaType:AVMediaTypeVideo] setVideoOrientation:self.previewLayer.connection.videoOrientation];
+  [self.stillImageOutput captureStillImageAsynchronouslyFromConnection:[self.stillImageOutput connectionWithMediaType:AVMediaTypeVideo] completionHandler:^(CMSampleBufferRef imageDataSampleBuffer, NSError *error) {
+
+    if (imageDataSampleBuffer)
+    {
+      NSData *imageData = [AVCaptureStillImageOutput jpegStillImageNSDataRepresentation:imageDataSampleBuffer];
+      UIImage *image = [UIImage imageWithData:imageData];
+      NSString *imageUUID = [[NSProcessInfo processInfo] globallyUniqueString];
+      NSString *fullPath = [self saveImage:image withName:imageUUID];
+      callback(@[[NSNull null], fullPath]);
+    }
+    else {
+      callback(@[RCTMakeError(error.description, nil, nil)]);
+    }
+  }];
+}
+
+- (NSString *)saveImage:(UIImage *)image withName:(NSString *)name {
+  NSData *data = UIImageJPEGRepresentation(image, 1.0);
+  NSFileManager *fileManager = [NSFileManager defaultManager];
+  NSString *fullPath = [[self applicationDocumentsDirectory] stringByAppendingPathComponent:name];
+  [fileManager createFileAtPath:fullPath contents:data attributes:nil];
+  return fullPath;
+}
+
 - (void)captureOutput:(AVCaptureOutput *)captureOutput didOutputMetadataObjects:(NSArray *)metadataObjects fromConnection:(AVCaptureConnection *)connection {
 
     NSArray *barcodeTypes = @[

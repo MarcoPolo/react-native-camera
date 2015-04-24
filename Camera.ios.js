@@ -73,6 +73,10 @@ var Camera = React.createClass({
 
   takePicture: function(cb) {
     NativeModules.CameraManager.takePicture(cb);
+  },
+
+  takePictureRef: function(cb) {
+    NativeModules.CameraManager.takePictureRef(cb);
   }
 });
 
